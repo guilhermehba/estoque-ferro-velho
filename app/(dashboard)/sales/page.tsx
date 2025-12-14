@@ -220,7 +220,7 @@ export default function SalesPage() {
                       .filter((item) => item.total_weight > 0)
                       .map((item) => (
                         <SelectItem key={item.id} value={item.id!}>
-                          {item.name} - {item.total_weight.toFixed(2)} kg
+                          {item.name} - {(item.total_weight || 0).toFixed(2)} kg
                         </SelectItem>
                       ))}
                   </SelectContent>
@@ -341,7 +341,7 @@ export default function SalesPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Peso</p>
-                <p className="font-medium">{sale.weight.toFixed(2)} kg</p>
+                <p className="font-medium">{(sale.weight || 0).toFixed(2)} kg</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Tipo de Pagamento</p>
@@ -350,7 +350,7 @@ export default function SalesPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Valor Total</p>
                 <p className="text-xl font-bold text-green-600">
-                  R$ {sale.total_value.toFixed(2)}
+                  R$ {(sale.total_value || 0).toFixed(2)}
                 </p>
               </div>
             </CardContent>

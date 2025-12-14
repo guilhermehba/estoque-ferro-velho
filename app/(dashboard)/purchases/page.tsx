@@ -347,7 +347,7 @@ export default function PurchasesPage() {
                             <div className="space-y-2">
                               <Label>Valor Total</Label>
                               <Input
-                                value={`R$ ${item.total_value.toFixed(2)}`}
+                                value={`R$ ${(item.total_value || 0).toFixed(2)}`}
                                 disabled
                                 className="font-semibold"
                               />
@@ -412,7 +412,7 @@ export default function PurchasesPage() {
 
       <div className="rounded-lg bg-blue-50 p-4">
         <p className="font-semibold text-blue-900">
-          Total das Compras de Hoje: R$ {getTotalDay().toFixed(2)}
+          Total das Compras de Hoje: R$ {(getTotalDay() || 0).toFixed(2)}
         </p>
       </div>
 
@@ -440,12 +440,12 @@ export default function PurchasesPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Peso Total</p>
-                <p className="font-medium">{purchase.total_weight.toFixed(2)} kg</p>
+                <p className="font-medium">{(purchase.total_weight || 0).toFixed(2)} kg</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Valor Total</p>
                 <p className="text-xl font-bold text-green-600">
-                  R$ {purchase.total_value.toFixed(2)}
+                  R$ {(purchase.total_value || 0).toFixed(2)}
                 </p>
               </div>
             </CardContent>

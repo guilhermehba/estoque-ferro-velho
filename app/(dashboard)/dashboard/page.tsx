@@ -52,16 +52,24 @@ export default function DashboardPage() {
       // Total em estoque
       const stockItems = await stockService.getAll();
       const totalStockValue = stockItems.reduce(
-        (sum, item) => sum + item.total_value,
+        (sum, item) => sum + (item.total_value || 0),
         0
       );
       setTotalStock(totalStockValue);
 
       // Vendas do mês
-      const currentMonth = format(new Date(), "yyyy-MM");
-      const sales = await salesService.getAll({ date: currentMonth });
-      const monthlySalesValue = sales.reduce(
-        (sum, sale) => sum + sale.total_value,
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      
+      // Buscar todas as vendas e filtrar por mês
+      const allSales = await salesService.getAll();
+      const monthlySales = allSales.filter((sale) => {
+        const saleDate = new Date(sale.date);
+        return saleDate >= firstDayOfMonth && saleDate <= lastDayOfMonth;
+      });
+      const monthlySalesValue = monthlySales.reduce(
+        (sum, sale) => sum + (sale.total_value || 0),
         0
       );
       setMonthlySales(monthlySalesValue);
@@ -84,7 +92,7 @@ export default function DashboardPage() {
       const salesByDay = await Promise.all(
         last7Days.map(async (date) => {
           const daySales = await salesService.getAll({ date });
-          return daySales.reduce((sum, s) => sum + s.total_value, 0);
+          return daySales.reduce((sum, s) => sum + (s.total_value || 0), 0);
         })
       );
 
@@ -130,19 +138,19 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <KPICard
           title="Total em Estoque"
-          value={`R$ ${totalStock.toFixed(2)}`}
+          value={`R$ ${(totalStock || 0).toFixed(2)}`}
           icon={Package}
           description="Valor total dos itens em estoque"
         />
         <KPICard
           title="Vendas do Mês"
-          value={`R$ ${monthlySales.toFixed(2)}`}
+          value={`R$ ${(monthlySales || 0).toFixed(2)}`}
           icon={TrendingUp}
           description="Total vendido este mês"
         />
         <KPICard
           title="Fluxo de Caixa"
-          value={`R$ ${cashflow.toFixed(2)}`}
+          value={`R$ ${(cashflow || 0).toFixed(2)}`}
           icon={DollarSign}
           description="Saldo atual em caixa"
         />
@@ -198,7 +206,7 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <p className="font-semibold">
-                    R$ {purchase.total_value.toFixed(2)}
+                    R$ {(purchase.total_value || 0).toFixed(2)}
                   </p>
                 </div>
               ))}

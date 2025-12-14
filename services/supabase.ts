@@ -24,7 +24,13 @@ export const db = {
 
     if (filters) {
       filters.forEach((filter) => {
-        query = query.eq(filter.column, filter.value);
+        // Se for filtro de data e o valor for apenas ano-mês (yyyy-MM), usar LIKE
+        if (filter.column === "date" && typeof filter.value === "string" && filter.value.match(/^\d{4}-\d{2}$/)) {
+          // Filtrar por ano-mês usando LIKE
+          query = query.like(filter.column, `${filter.value}%`);
+        } else {
+          query = query.eq(filter.column, filter.value);
+        }
       });
     }
 
@@ -35,8 +41,11 @@ export const db = {
     }
 
     const { data, error } = await query;
-    if (error) throw error;
-    return data as T[];
+    if (error) {
+      console.error("Erro ao buscar dados:", error);
+      throw error;
+    }
+    return (data || []) as T[];
   },
 
   // INSERT

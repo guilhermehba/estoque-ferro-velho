@@ -262,26 +262,26 @@ export default function StockPage() {
             <CardContent className="space-y-2">
               <div>
                 <p className="text-sm text-muted-foreground">Peso Total</p>
-                <p className="font-medium">{item.total_weight.toFixed(2)} kg</p>
+                <p className="font-medium">{(item.total_weight || 0).toFixed(2)} kg</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">
                   Quantidade de Entradas
                 </p>
-                <p className="font-medium">{item.entry_count}</p>
+                <p className="font-medium">{item.entry_count || 0}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">
                   Preço Médio por kg
                 </p>
                 <p className="font-medium">
-                  R$ {item.average_price_per_kg.toFixed(2)}
+                  R$ {(item.average_price_per_kg || 0).toFixed(2)}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Valor Total</p>
                 <p className="text-xl font-bold text-green-600">
-                  R$ {item.total_value.toFixed(2)}
+                  R$ {(item.total_value || 0).toFixed(2)}
                 </p>
               </div>
             </CardContent>

@@ -92,26 +92,26 @@ export default function CashflowPage() {
 
       doc.setFontSize(10);
       doc.text(
-        `Dinheiro que entrou no caixa: R$ ${cashflowData.salesMoney.toFixed(2)}`,
+        `Dinheiro que entrou no caixa: R$ ${(cashflowData.salesMoney || 0).toFixed(2)}`,
         14,
         yPosition
       );
       yPosition += 6;
       doc.text(
-        `Compras pagas no Pix: R$ ${cashflowData.purchasesPix.toFixed(2)}`,
+        `Compras pagas no Pix: R$ ${(cashflowData.purchasesPix || 0).toFixed(2)}`,
         14,
         yPosition
       );
       yPosition += 6;
       doc.text(
-        `Total das compras: R$ ${cashflowData.totalPurchases.toFixed(2)}`,
+        `Total das compras: R$ ${(cashflowData.totalPurchases || 0).toFixed(2)}`,
         14,
         yPosition
       );
       yPosition += 6;
       doc.setFontSize(12);
       doc.text(
-        `Saldo em Caixa: R$ ${cashflowData.cashflow.toFixed(2)}`,
+        `Saldo em Caixa: R$ ${(cashflowData.cashflow || 0).toFixed(2)}`,
         14,
         yPosition
       );
@@ -150,7 +150,7 @@ export default function CashflowPage() {
         doc.text(entry.type === "entrada" ? "Entrada" : "Saída", 50, yPosition);
         doc.text(entry.description.substring(0, 30), 70, yPosition);
         doc.text(
-          `R$ ${entry.value.toFixed(2)}`,
+          `R$ ${(entry.value || 0).toFixed(2)}`,
           160,
           yPosition,
           { align: "right" }
@@ -212,7 +212,7 @@ export default function CashflowPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              R$ {cashflowData.salesMoney.toFixed(2)}
+              R$ {(cashflowData.salesMoney || 0).toFixed(2)}
             </div>
           </CardContent>
         </Card>
@@ -224,7 +224,7 @@ export default function CashflowPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              R$ {cashflowData.purchasesPix.toFixed(2)}
+              R$ {(cashflowData.purchasesPix || 0).toFixed(2)}
             </div>
           </CardContent>
         </Card>
@@ -236,7 +236,7 @@ export default function CashflowPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              R$ {cashflowData.totalPurchases.toFixed(2)}
+              R$ {(cashflowData.totalPurchases || 0).toFixed(2)}
             </div>
           </CardContent>
         </Card>
@@ -246,7 +246,7 @@ export default function CashflowPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              R$ {cashflowData.cashflow.toFixed(2)}
+              R$ {(cashflowData.cashflow || 0).toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Cálculo: Dinheiro que entrou + Compras pagas no Pix - Total das
@@ -319,7 +319,7 @@ export default function CashflowPage() {
                     }`}
                   >
                     {entry.type === "entrada" ? "+" : "-"}R${" "}
-                    {entry.value.toFixed(2)}
+                    {(entry.value || 0).toFixed(2)}
                   </p>
                 </div>
               </div>

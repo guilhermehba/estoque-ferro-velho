@@ -54,16 +54,16 @@ export const cashflowService = {
     // Dinheiro que entrou no caixa
     const salesMoney = sales
       .filter((s) => s.payment_type === "dinheiro")
-      .reduce((sum, s) => sum + s.total_value, 0);
+      .reduce((sum, s) => sum + (s.total_value || 0), 0);
 
     // Compras pagas no Pix
     const purchasesPix = purchases
       .filter((p) => p.payment_type === "pix")
-      .reduce((sum, p) => sum + p.total_value, 0);
+      .reduce((sum, p) => sum + (p.total_value || 0), 0);
 
     // Total das compras
     const totalPurchases = purchases.reduce(
-      (sum, p) => sum + p.total_value,
+      (sum, p) => sum + (p.total_value || 0),
       0
     );
 
