@@ -1,0 +1,145 @@
+import { db } from "./supabase";
+import {
+  mockPurchases,
+  mockPurchaseItems,
+  isMockMode,
+  mockDelay,
+} from "./mock-data";
+
+export interface PurchaseItem {
+  id?: string;
+  purchase_id?: string;
+  item_name: string;
+  weight: number;
+  price_per_kg: number;
+  total_value: number;
+}
+
+export interface Purchase {
+  id?: string;
+  date: string;
+  payment_type: "dinheiro" | "pix" | "credito" | "debito";
+  total_weight: number;
+  total_value: number;
+  created_at?: string;
+  user_id?: string;
+}
+
+// Armazenamento mock em memória
+let mockPurchasesData = [...mockPurchases];
+let mockPurchaseItemsData: Record<string, PurchaseItem[]> = {
+  ...mockPurchaseItems,
+};
+
+export const purchasesService = {
+  async getAll(filters?: { date?: string; payment_type?: string }) {
+    if (isMockMode()) {
+      await mockDelay();
+      let filtered = [...mockPurchasesData];
+
+      if (filters?.date) {
+        filtered = filtered.filter((p) => p.date === filters.date);
+      }
+      if (filters?.payment_type) {
+        filtered = filtered.filter((p) => p.payment_type === filters.payment_type);
+      }
+
+      return filtered.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+    }
+
+    const filtersArray = [];
+    if (filters?.date) {
+      filtersArray.push({ column: "date", value: filters.date });
+    }
+    if (filters?.payment_type) {
+      filtersArray.push({ column: "payment_type", value: filters.payment_type });
+    }
+
+    return await db.select<Purchase>(
+      "purchases",
+      filtersArray.length > 0 ? filtersArray : undefined,
+      { column: "date", ascending: false }
+    );
+  },
+
+  async getById(id: string) {
+    if (isMockMode()) {
+      await mockDelay();
+      return mockPurchasesData.find((p) => p.id === id) || null;
+    }
+    const purchases = await db.select<Purchase>("purchases", [
+      { column: "id", value: id },
+    ]);
+    return purchases[0];
+  },
+
+  async getItems(purchaseId: string) {
+    if (isMockMode()) {
+      await mockDelay();
+      return mockPurchaseItemsData[purchaseId] || [];
+    }
+    return await db.select<PurchaseItem>("purchase_items", [
+      { column: "purchase_id", value: purchaseId },
+    ]);
+  },
+
+  async create(
+    purchase: Omit<Purchase, "id" | "created_at">,
+    items: Omit<PurchaseItem, "id" | "purchase_id">[]
+  ) {
+    if (isMockMode()) {
+      await mockDelay();
+      const newPurchase: Purchase = {
+        ...purchase,
+        id: `mock-purchase-${Date.now()}`,
+        created_at: new Date().toISOString(),
+      };
+      mockPurchasesData.push(newPurchase);
+
+      const itemsWithPurchaseId = items.map((item, index) => ({
+        ...item,
+        id: `mock-item-${Date.now()}-${index}`,
+        purchase_id: newPurchase.id,
+      }));
+
+      mockPurchaseItemsData[newPurchase.id!] = itemsWithPurchaseId;
+
+      return newPurchase;
+    }
+
+    // Criar compra
+    const [createdPurchase] = await db.insert<Purchase>("purchases", purchase);
+
+    // Criar itens
+    const itemsWithPurchaseId = items.map((item) => ({
+      ...item,
+      purchase_id: createdPurchase.id,
+    }));
+
+    await db.insert<PurchaseItem>("purchase_items", itemsWithPurchaseId);
+
+    return createdPurchase;
+  },
+
+  async delete(id: string) {
+    if (isMockMode()) {
+      await mockDelay();
+      mockPurchasesData = mockPurchasesData.filter((p) => p.id !== id);
+      delete mockPurchaseItemsData[id];
+      return;
+    }
+
+    // Deletar itens primeiro
+    const items = await this.getItems(id);
+    for (const item of items) {
+      if (item.id) {
+        await db.delete("purchase_items", item.id);
+      }
+    }
+    // Deletar compra
+    await db.delete("purchases", id);
+  },
+};
+

@@ -1,57 +1,30 @@
-# Sistema de Estoque - Ferro Velho
+# Configuração do Supabase
 
-Sistema completo de gestão de estoque para ferro velho, desenvolvido com Next.js, Supabase, TailwindCSS e shadcn/ui.
-
-## 🚀 Tecnologias
-
-- **Next.js 16** (App Router)
-- **Supabase** (Auth + Database)
-- **TailwindCSS**
-- **shadcn/ui**
-- **Chart.js** (Gráficos)
-- **jsPDF** (Geração de PDF)
-
-## 📋 Pré-requisitos
-
-- Node.js 18+ instalado
-- Conta no Supabase (gratuita)
-- npm ou yarn
-
-## 🔧 Instalação
-
-1. Clone o repositório:
-```bash
-git clone <seu-repositorio>
-cd estoque-ferro-velho
-```
-
-2. Instale as dependências:
-```bash
-npm install
-```
-
-3. Configure as variáveis de ambiente:
-```bash
-cp .env.example .env.local
-```
-
-Edite o arquivo `.env.local` e adicione suas credenciais do Supabase:
-```
-NEXT_PUBLIC_SUPABASE_URL=sua_url_do_supabase
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_chave_anonima_do_supabase
-```
-
-## 🗄️ Configuração do Supabase
+## Passo a Passo
 
 ### 1. Criar Projeto no Supabase
 
-1. Acesse [supabase.com](https://supabase.com)
-2. Crie um novo projeto
-3. Anote a URL e a chave anônima (anon key)
+1. Acesse https://supabase.com
+2. Faça login ou crie uma conta
+3. Clique em "New Project"
+4. Preencha:
+   - **Name:** sistema-estoque
+   - **Database Password:** (anote esta senha)
+   - **Region:** escolha a mais próxima
+5. Aguarde a criação do projeto (2-3 minutos)
 
-### 2. Criar Tabelas
+### 2. Obter Credenciais
 
-Execute os seguintes SQL no SQL Editor do Supabase:
+1. No projeto criado, vá em **Settings** > **API**
+2. Copie:
+   - **Project URL** → será `NEXT_PUBLIC_SUPABASE_URL`
+   - **anon public** key → será `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+### 3. Criar Tabelas
+
+1. No menu lateral, vá em **SQL Editor**
+2. Clique em **New Query**
+3. Cole o SQL abaixo e execute:
 
 ```sql
 -- Tabela de compras
@@ -107,134 +80,64 @@ ALTER TABLE purchase_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE stock ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
 
--- Políticas RLS (permitir tudo para usuários autenticados)
+-- Políticas RLS para purchases
 CREATE POLICY "Users can view purchases" ON purchases FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Users can insert purchases" ON purchases FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Users can update purchases" ON purchases FOR UPDATE USING (auth.role() = 'authenticated');
 CREATE POLICY "Users can delete purchases" ON purchases FOR DELETE USING (auth.role() = 'authenticated');
 
+-- Políticas RLS para purchase_items
 CREATE POLICY "Users can view purchase_items" ON purchase_items FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Users can insert purchase_items" ON purchase_items FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Users can update purchase_items" ON purchase_items FOR UPDATE USING (auth.role() = 'authenticated');
 CREATE POLICY "Users can delete purchase_items" ON purchase_items FOR DELETE USING (auth.role() = 'authenticated');
 
+-- Políticas RLS para stock
 CREATE POLICY "Users can view stock" ON stock FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Users can insert stock" ON stock FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Users can update stock" ON stock FOR UPDATE USING (auth.role() = 'authenticated');
 CREATE POLICY "Users can delete stock" ON stock FOR DELETE USING (auth.role() = 'authenticated');
 
+-- Políticas RLS para sales
 CREATE POLICY "Users can view sales" ON sales FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Users can insert sales" ON sales FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Users can update sales" ON sales FOR UPDATE USING (auth.role() = 'authenticated');
 CREATE POLICY "Users can delete sales" ON sales FOR DELETE USING (auth.role() = 'authenticated');
 ```
 
-### 3. Criar Usuário de Teste
+4. Clique em **Run** ou pressione `Ctrl+Enter`
 
-1. No Supabase, vá em Authentication > Users
-2. Clique em "Add user" > "Create new user"
-3. Email: `teste@gmail.com`
-4. Senha: `123`
-5. Marque "Auto Confirm User"
+### 4. Criar Usuário de Teste
 
-## 🎯 Executar o Projeto
+1. No menu lateral, vá em **Authentication** > **Users**
+2. Clique em **Add user** > **Create new user**
+3. Preencha:
+   - **Email:** teste@gmail.com
+   - **Password:** 123
+   - **Auto Confirm User:** ✅ (marque esta opção)
+4. Clique em **Create user**
 
-```bash
-npm run dev
+### 5. Configurar Variáveis de Ambiente
+
+1. No projeto Next.js, crie o arquivo `.env.local` na raiz
+2. Adicione:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=sua_url_aqui
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_chave_aqui
 ```
 
-Acesse [http://localhost:3000](http://localhost:3000)
+3. Substitua pelos valores copiados no passo 2
 
-## 🔐 Credenciais de Teste
+### 6. Testar
 
-- **Email:** teste@gmail.com
-- **Senha:** 123
+1. Execute `npm run dev`
+2. Acesse http://localhost:3000
+3. Faça login com:
+   - Email: teste@gmail.com
+   - Senha: 123
 
-## 📱 Funcionalidades
+## ✅ Pronto!
 
-### ✅ Autenticação
-- Login com Supabase Auth
-- Proteção de rotas
-- Logout
+Seu sistema está configurado e pronto para uso!
 
-### ✅ Dashboard
-- KPIs (Total em estoque, Vendas do mês, Fluxo de caixa)
-- Gráfico de vendas dos últimos 7 dias
-- Compras recentes
-
-### ✅ Compras (Estilo Trello)
-- Cards com informações da compra
-- Múltiplos itens por compra
-- Adição automática ao estoque
-- Filtros por data e tipo de pagamento
-- Total das compras do dia
-
-### ✅ Estoque
-- Listagem de itens
-- Edição e exclusão
-- Atualização automática após compras e vendas
-- Valor total em estoque
-
-### ✅ Vendas
-- Registro de vendas
-- Seleção de item do estoque
-- Atualização automática do estoque
-- Filtros por data e tipo de pagamento
-
-### ✅ Fluxo de Caixa
-- Cálculo automático do saldo
-- Listagem de entradas e saídas
-- Exportação em PDF
-- Filtros por data e tipo de pagamento
-
-### ✅ Configurações
-- Dados do usuário
-- Logout
-
-## 📝 Estrutura do Projeto
-
-```
-src/
-  app/
-    (auth)/
-      login/
-        page.tsx
-    (dashboard)/
-      layout.tsx
-      dashboard/
-        page.tsx
-      purchases/
-        page.tsx
-      stock/
-        page.tsx
-      sales/
-        page.tsx
-      cashflow/
-        page.tsx
-      settings/
-        page.tsx
-  components/
-    topbar/
-    cards/
-    ui/
-  services/
-    supabase.ts
-    auth.ts
-    purchases.ts
-    stock.ts
-    sales.ts
-    cashflow.ts
-  lib/
-    utils.ts
-```
-
-## 🎨 UI/UX
-
-- Design moderno e responsivo
-- Componentes shadcn/ui
-- TailwindCSS para estilização
-- Interface limpa e profissional
-
-## 📄 Licença
-
-Este projeto é privado e de uso interno.
