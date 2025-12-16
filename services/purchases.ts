@@ -25,7 +25,7 @@ export interface Purchase {
   user_id?: string;
 }
 
-// ===== Mock storage =====
+// Mock em memória
 let mockPurchasesData = [...mockPurchases];
 let mockPurchaseItemsData: Record<string, PurchaseItem[]> = {
   ...mockPurchaseItems,
@@ -47,8 +47,7 @@ export const purchasesService = {
       }
 
       return filtered.sort(
-        (a, b) =>
-          new Date(b.date).getTime() - new Date(a.date).getTime()
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
       );
     }
 
@@ -79,7 +78,6 @@ export const purchasesService = {
     const purchases = await db.select<Purchase>("purchases", [
       { column: "id", value: id },
     ]);
-
     return purchases[0];
   },
 
@@ -96,8 +94,11 @@ export const purchasesService = {
 
   async create(
     purchase: Omit<Purchase, "id" | "created_at">,
-    items: Omit<PurchaseItem, "id" | "purchase_id">[]
+    items: Omit<PurchaseItem, "id" | "purchase_id" | "total_value">[]
   ) {
+    // =========================
+    // MOCK MODE
+    // =========================
     if (isMockMode()) {
       await mockDelay();
 
@@ -109,46 +110,44 @@ export const purchasesService = {
 
       mockPurchasesData.push(newPurchase);
 
-      const itemsWithPurchaseId = items.map((item) => ({
+      const itemsWithPurchaseId: PurchaseItem[] = items.map((item, index) => ({
+        id: `mock-item-${Date.now()}-${index}`,
+        purchase_id: newPurchase.id,
         item_name: item.item_name,
         weight: item.weight,
         price_per_kg: item.price_per_kg,
-        purchase_id: createdPurchase.id,
-        // 🚫 NÃO enviar total_value
+        total_value: item.weight * item.price_per_kg,
       }));
-
 
       mockPurchaseItemsData[newPurchase.id!] = itemsWithPurchaseId;
 
       return newPurchase;
     }
 
-    // ===== Payload compatível com o banco =====
+    // =========================
+    // PRODUÇÃO (SUPABASE)
+    // =========================
+
+    // NÃO enviar total_value (coluna DEFAULT / GENERATED)
     const purchasePayload = {
       date: purchase.date,
       payment_type: purchase.payment_type,
-      description: "Compra de materiais",
-      amount: purchase.total_value,
       total_weight: purchase.total_weight,
-      // 🚫 NÃO enviar total_value
+      total_value: purchase.total_value, // ⚠️ só mantenha se o banco permitir
     };
 
-    // Criar compra
     const [createdPurchase] = await db.insert<Purchase>(
       "purchases",
       purchasePayload
     );
 
-    // Criar itens
-  const itemsWithPurchaseId: PurchaseItem[] = items.map((item, index) => ({
-      id: `mock-item-${Date.now()}-${index}`,
-      purchase_id: newPurchase.id,
+    const itemsWithPurchaseId = items.map((item) => ({
+      purchase_id: createdPurchase.id,
       item_name: item.item_name,
       weight: item.weight,
       price_per_kg: item.price_per_kg,
       total_value: item.weight * item.price_per_kg,
     }));
-
 
     await db.insert<PurchaseItem>("purchase_items", itemsWithPurchaseId);
 
@@ -163,7 +162,6 @@ export const purchasesService = {
       return;
     }
 
-    // Deletar itens primeiro
     const items = await this.getItems(id);
     for (const item of items) {
       if (item.id) {
@@ -171,7 +169,6 @@ export const purchasesService = {
       }
     }
 
-    // Deletar compra
     await db.delete("purchases", id);
   },
 };
