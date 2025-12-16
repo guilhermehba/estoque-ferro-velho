@@ -109,11 +109,14 @@ export const purchasesService = {
 
       mockPurchasesData.push(newPurchase);
 
-      const itemsWithPurchaseId = items.map((item, index) => ({
-        ...item,
-        id: `mock-item-${Date.now()}-${index}`,
-        purchase_id: newPurchase.id,
+      const itemsWithPurchaseId = items.map((item) => ({
+        item_name: item.item_name,
+        weight: item.weight,
+        price_per_kg: item.price_per_kg,
+        purchase_id: createdPurchase.id,
+        // 🚫 NÃO enviar total_value
       }));
+
 
       mockPurchaseItemsData[newPurchase.id!] = itemsWithPurchaseId;
 
