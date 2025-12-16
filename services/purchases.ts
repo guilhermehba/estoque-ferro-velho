@@ -129,12 +129,21 @@ export const purchasesService = {
     // =========================
 
     // NÃO enviar total_value (coluna DEFAULT / GENERATED)
-    const purchasePayload = {
-      date: purchase.date,
-      payment_type: purchase.payment_type,
-      total_weight: purchase.total_weight,
-      total_value: purchase.total_value, // ⚠️ só mantenha se o banco permitir
-    };
+    // const purchasePayload = {
+    //   date: purchase.date,
+    //   payment_type: purchase.payment_type,
+    //   total_weight: purchase.total_weight,
+    //   total_value: purchase.total_value, // ⚠️ só mantenha se o banco permitir
+    // };
+      const itemsPayload = items.map((item) => ({
+        purchase_id: createdPurchase.id,
+        item_name: item.item_name,
+        weight: item.weight,
+        price_per_kg: item.price_per_kg,
+        // NÃO enviar total_value
+      }));
+
+await db.insert("purchase_items", itemsPayload);
 
     const [createdPurchase] = await db.insert<Purchase>(
       "purchases",
