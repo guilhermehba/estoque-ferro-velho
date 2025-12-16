@@ -127,7 +127,7 @@ export const purchasesService = {
       description: "Compra de materiais",
       amount: purchase.total_value,
       total_weight: purchase.total_weight,
-      total_value: purchase.total_value,
+      // 🚫 NÃO enviar total_value
     };
 
     // Criar compra
