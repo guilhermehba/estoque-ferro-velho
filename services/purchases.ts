@@ -140,10 +140,15 @@ export const purchasesService = {
     );
 
     // Criar itens
-    const itemsWithPurchaseId = items.map((item) => ({
-      ...item,
-      purchase_id: createdPurchase.id,
+  const itemsWithPurchaseId: PurchaseItem[] = items.map((item, index) => ({
+      id: `mock-item-${Date.now()}-${index}`,
+      purchase_id: newPurchase.id,
+      item_name: item.item_name,
+      weight: item.weight,
+      price_per_kg: item.price_per_kg,
+      total_value: item.weight * item.price_per_kg,
     }));
+
 
     await db.insert<PurchaseItem>("purchase_items", itemsWithPurchaseId);
 
