@@ -155,10 +155,10 @@ await db.insert("purchase_items", itemsPayload);
       item_name: item.item_name,
       weight: item.weight,
       price_per_kg: item.price_per_kg,
-      total_value: item.weight * item.price_per_kg,
+      total_value: item.total_value, // AGORA É PERMITIDO
     }));
-
-    await db.insert<PurchaseItem>("purchase_items", itemsWithPurchaseId);
+    
+    await db.insert("purchase_items", itemsWithPurchaseId);
 
     return createdPurchase;
   },
