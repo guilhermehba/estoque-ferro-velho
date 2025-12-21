@@ -25,7 +25,9 @@ export interface Purchase {
   user_id?: string;
 }
 
-// Mock em memória
+// =========================
+// MOCK EM MEMÓRIA
+// =========================
 let mockPurchasesData = [...mockPurchases];
 let mockPurchaseItemsData: Record<string, PurchaseItem[]> = {
   ...mockPurchaseItems,
@@ -62,7 +64,7 @@ export const purchasesService = {
       });
     }
 
-    return await db.select<Purchase>(
+    return db.select<Purchase>(
       "purchases",
       filtersArray.length > 0 ? filtersArray : undefined,
       { column: "date", ascending: false }
@@ -87,14 +89,14 @@ export const purchasesService = {
       return mockPurchaseItemsData[purchaseId] || [];
     }
 
-    return await db.select<PurchaseItem>("purchase_items", [
+    return db.select<PurchaseItem>("purchase_items", [
       { column: "purchase_id", value: purchaseId },
     ]);
   },
 
   async create(
     purchase: Omit<Purchase, "id" | "created_at">,
-    items: Omit<PurchaseItem, "id" | "purchase_id" | "total_value">[]
+    items: Omit<PurchaseItem, "id" | "purchase_id">[]
   ) {
     // =========================
     // MOCK MODE
@@ -116,7 +118,7 @@ export const purchasesService = {
         item_name: item.item_name,
         weight: item.weight,
         price_per_kg: item.price_per_kg,
-        total_value: item.weight * item.price_per_kg,
+        total_value: item.total_value,
       }));
 
       mockPurchaseItemsData[newPurchase.id!] = itemsWithPurchaseId;
@@ -128,37 +130,28 @@ export const purchasesService = {
     // PRODUÇÃO (SUPABASE)
     // =========================
 
-    // NÃO enviar total_value (coluna DEFAULT / GENERATED)
-    // const purchasePayload = {
-    //   date: purchase.date,
-    //   payment_type: purchase.payment_type,
-    //   total_weight: purchase.total_weight,
-    //   total_value: purchase.total_value, // ⚠️ só mantenha se o banco permitir
-    // };
-      const itemsPayload = items.map((item) => ({
-        purchase_id: createdPurchase.id,
-        item_name: item.item_name,
-        weight: item.weight,
-        price_per_kg: item.price_per_kg,
-        // NÃO enviar total_value
-      }));
+    // 1️⃣ Criar a compra (ENVIANDO total_value)
+    const [createdPurchase] = await db.insert<Purchase>("purchases", {
+      date: purchase.date,
+      payment_type: purchase.payment_type,
+      total_weight: purchase.total_weight,
+      total_value: purchase.total_value,
+    });
 
-await db.insert("purchase_items", itemsPayload);
+    if (!createdPurchase?.id) {
+      throw new Error("Falha ao criar a compra");
+    }
 
-    const [createdPurchase] = await db.insert<Purchase>(
-      "purchases",
-      purchasePayload
-    );
-
-    const itemsWithPurchaseId = items.map((item) => ({
+    // 2️⃣ Criar os itens da compra
+    const itemsPayload: PurchaseItem[] = items.map((item) => ({
       purchase_id: createdPurchase.id,
       item_name: item.item_name,
       weight: item.weight,
       price_per_kg: item.price_per_kg,
-      total_value: item.total_value, // AGORA É PERMITIDO
+      total_value: item.total_value,
     }));
-    
-    await db.insert("purchase_items", itemsWithPurchaseId);
+
+    await db.insert("purchase_items", itemsPayload);
 
     return createdPurchase;
   },
