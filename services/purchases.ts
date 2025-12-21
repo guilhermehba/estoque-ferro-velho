@@ -11,7 +11,7 @@ export interface PurchaseItem {
   purchase_id?: string;
   item_name: string;
   weight: number;
-  price_per_kg: number;
+  price_per_kg: number; // usado no front
   total_value: number;
 }
 
@@ -64,7 +64,7 @@ export const purchasesService = {
       });
     }
 
-    return db.select<Purchase>(
+    return await db.select<Purchase>(
       "purchases",
       filtersArray.length > 0 ? filtersArray : undefined,
       { column: "date", ascending: false }
@@ -89,7 +89,7 @@ export const purchasesService = {
       return mockPurchaseItemsData[purchaseId] || [];
     }
 
-    return db.select<PurchaseItem>("purchase_items", [
+    return await db.select<PurchaseItem>("purchase_items", [
       { column: "purchase_id", value: purchaseId },
     ]);
   },
@@ -118,7 +118,7 @@ export const purchasesService = {
         item_name: item.item_name,
         weight: item.weight,
         price_per_kg: item.price_per_kg,
-        total_value: item.total_value,
+        total_value: item.weight * item.price_per_kg,
       }));
 
       mockPurchaseItemsData[newPurchase.id!] = itemsWithPurchaseId;
@@ -130,7 +130,7 @@ export const purchasesService = {
     // PRODUÇÃO (SUPABASE)
     // =========================
 
-    // 1️⃣ Criar a compra (ENVIANDO total_value)
+    // 1️⃣ cria a compra
     const [createdPurchase] = await db.insert<Purchase>("purchases", {
       date: purchase.date,
       payment_type: purchase.payment_type,
@@ -138,16 +138,12 @@ export const purchasesService = {
       total_value: purchase.total_value,
     });
 
-    if (!createdPurchase?.id) {
-      throw new Error("Falha ao criar a compra");
-    }
-
-    // 2️⃣ Criar os itens da compra
-    const itemsPayload: PurchaseItem[] = items.map((item) => ({
+    // 2️⃣ cria os itens (MAPEANDO OS NOMES CORRETOS)
+    const itemsPayload = items.map((item) => ({
       purchase_id: createdPurchase.id,
       item_name: item.item_name,
       weight: item.weight,
-      price_per_kg: item.price_per_kg,
+      price_per_unit: item.price_per_kg, // 🔥 CORREÇÃO CRÍTICA
       total_value: item.total_value,
     }));
 
