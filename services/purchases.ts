@@ -7,15 +7,15 @@ import {
 } from "./mock-data";
 
 /**
- * Tipos usados NO FRONT
+ * TIPOS DO FRONT
  */
 export interface PurchaseItem {
   id?: string;
   purchase_id?: string;
   item_name: string;
   weight: number;
-  price_per_kg: number; // FRONT
-  total_value: number;  // FRONT
+  price_per_kg: number;
+  total_value: number;
 }
 
 export interface Purchase {
@@ -76,7 +76,7 @@ export const purchasesService = {
     );
   },
 
-  async getById(id: string) {
+  async getById(id: string): Promise<Purchase | null> {
     if (isMockMode()) {
       await mockDelay();
       return mockPurchasesData.find((p) => p.id === id) || null;
@@ -89,13 +89,14 @@ export const purchasesService = {
     return purchases[0] || null;
   },
 
-  async getItems(purchaseId: string) {
+  async getItems(purchaseId: string): Promise<PurchaseItem[]> {
     if (isMockMode()) {
       await mockDelay();
       return mockPurchaseItemsData[purchaseId] || [];
     }
 
-    return db.select("purchase_items", [
+    // 🔥 TIPAGEM EXPLÍCITA
+    return db.select<PurchaseItem>("purchase_items", [
       { column: "purchase_id", value: purchaseId },
     ]);
   },
@@ -140,7 +141,7 @@ export const purchasesService = {
      * =========================
      */
 
-    // 1️⃣ INSERE A COMPRA
+    // 1️⃣ CRIA A COMPRA
     const [createdPurchase] = await db.insert<Purchase>("purchases", {
       date: purchase.date,
       payment_type: purchase.payment_type,
@@ -148,15 +149,13 @@ export const purchasesService = {
       total_value: purchase.total_value,
     });
 
-    // 2️⃣ INSERE OS ITENS (MAPEANDO PARA O SCHEMA REAL DO BANCO)
+    // 2️⃣ CRIA OS ITENS (MAPEANDO PARA O BANCO)
     const itemsPayload = items.map((item) => ({
       purchase_id: createdPurchase.id,
       item_name: item.item_name,
       weight: item.weight,
-
-      // 🔥 NOMES EXATOS DO BANCO
-      price_per_unit: item.price_per_kg,
-      total_price: item.total_value,
+      price_per_unit: item.price_per_kg, // nome REAL do banco
+      total_price: item.total_value,     // nome REAL do banco
     }));
 
     await db.insert("purchase_items", itemsPayload);
@@ -172,7 +171,9 @@ export const purchasesService = {
       return;
     }
 
+    // 🔥 AGORA O TYPE É PurchaseItem[]
     const items = await this.getItems(id);
+
     for (const item of items) {
       if (item.id) {
         await db.delete("purchase_items", item.id);
