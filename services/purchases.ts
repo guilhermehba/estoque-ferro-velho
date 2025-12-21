@@ -6,9 +6,6 @@ import {
   mockDelay,
 } from "./mock-data";
 
-/**
- * TIPOS DO FRONT
- */
 export interface PurchaseItem {
   id?: string;
   purchase_id?: string;
@@ -28,11 +25,9 @@ export interface Purchase {
   user_id?: string;
 }
 
-/**
- * =========================
- * MOCK EM MEMÓRIA
- * =========================
- */
+// =========================
+// MOCK EM MEMÓRIA
+// =========================
 let mockPurchasesData = [...mockPurchases];
 let mockPurchaseItemsData: Record<string, PurchaseItem[]> = {
   ...mockPurchaseItems,
@@ -58,45 +53,16 @@ export const purchasesService = {
       );
     }
 
-    const filtersArray: any[] = [];
-    if (filters?.date) {
-      filtersArray.push({ column: "date", value: filters.date });
-    }
-    if (filters?.payment_type) {
-      filtersArray.push({
-        column: "payment_type",
-        value: filters.payment_type,
-      });
-    }
-
-    return db.select<Purchase>(
-      "purchases",
-      filtersArray.length ? filtersArray : undefined,
-      { column: "date", ascending: false }
-    );
+    return await db.select<Purchase>("purchases");
   },
 
-  async getById(id: string): Promise<Purchase | null> {
-    if (isMockMode()) {
-      await mockDelay();
-      return mockPurchasesData.find((p) => p.id === id) || null;
-    }
-
-    const purchases = await db.select<Purchase>("purchases", [
-      { column: "id", value: id },
-    ]);
-
-    return purchases[0] || null;
-  },
-
-  async getItems(purchaseId: string): Promise<PurchaseItem[]> {
+  async getItems(purchaseId: string) {
     if (isMockMode()) {
       await mockDelay();
       return mockPurchaseItemsData[purchaseId] || [];
     }
 
-    // 🔥 TIPAGEM EXPLÍCITA
-    return db.select<PurchaseItem>("purchase_items", [
+    return await db.select<PurchaseItem>("purchase_items", [
       { column: "purchase_id", value: purchaseId },
     ]);
   },
@@ -105,43 +71,33 @@ export const purchasesService = {
     purchase: Omit<Purchase, "id" | "created_at">,
     items: Omit<PurchaseItem, "id" | "purchase_id">[]
   ) {
-    /**
-     * =========================
-     * MOCK MODE
-     * =========================
-     */
+    // =========================
+    // MOCK MODE
+    // =========================
     if (isMockMode()) {
       await mockDelay();
 
       const newPurchase: Purchase = {
         ...purchase,
-        id: `mock-purchase-${Date.now()}`,
+        id: `mock-${Date.now()}`,
         created_at: new Date().toISOString(),
       };
 
       mockPurchasesData.push(newPurchase);
 
-      const itemsWithPurchaseId: PurchaseItem[] = items.map((item, index) => ({
-        id: `mock-item-${Date.now()}-${index}`,
+      mockPurchaseItemsData[newPurchase.id!] = items.map((item, i) => ({
+        ...item,
+        id: `mock-item-${i}`,
         purchase_id: newPurchase.id,
-        item_name: item.item_name,
-        weight: item.weight,
-        price_per_kg: item.price_per_kg,
-        total_value: item.total_value,
       }));
-
-      mockPurchaseItemsData[newPurchase.id!] = itemsWithPurchaseId;
 
       return newPurchase;
     }
 
-    /**
-     * =========================
-     * PRODUÇÃO (SUPABASE)
-     * =========================
-     */
+    // =========================
+    // PRODUÇÃO
+    // =========================
 
-    // 1️⃣ CRIA A COMPRA
     const [createdPurchase] = await db.insert<Purchase>("purchases", {
       date: purchase.date,
       payment_type: purchase.payment_type,
@@ -149,13 +105,12 @@ export const purchasesService = {
       total_value: purchase.total_value,
     });
 
-    // 2️⃣ CRIA OS ITENS (MAPEANDO PARA O BANCO)
     const itemsPayload = items.map((item) => ({
       purchase_id: createdPurchase.id,
       item_name: item.item_name,
       weight: item.weight,
-      price_per_unit: item.price_per_kg, // nome REAL do banco
-      total_price: item.total_value,     // nome REAL do banco
+      price_per_kg: item.price_per_kg,
+      total_value: item.total_value,
     }));
 
     await db.insert("purchase_items", itemsPayload);
@@ -165,21 +120,12 @@ export const purchasesService = {
 
   async delete(id: string) {
     if (isMockMode()) {
-      await mockDelay();
       mockPurchasesData = mockPurchasesData.filter((p) => p.id !== id);
       delete mockPurchaseItemsData[id];
       return;
     }
 
-    // 🔥 AGORA O TYPE É PurchaseItem[]
-    const items = await this.getItems(id);
-
-    for (const item of items) {
-      if (item.id) {
-        await db.delete("purchase_items", item.id);
-      }
-    }
-
+    await db.delete("purchase_items", { purchase_id: id });
     await db.delete("purchases", id);
   },
 };
