@@ -6,13 +6,16 @@ import {
   mockDelay,
 } from "./mock-data";
 
+/**
+ * Tipos usados NO FRONT
+ */
 export interface PurchaseItem {
   id?: string;
   purchase_id?: string;
   item_name: string;
   weight: number;
-  price_per_kg: number; // usado no front
-  total_value: number;
+  price_per_kg: number; // FRONT
+  total_value: number;  // FRONT
 }
 
 export interface Purchase {
@@ -25,9 +28,11 @@ export interface Purchase {
   user_id?: string;
 }
 
-// =========================
-// MOCK EM MEMÓRIA
-// =========================
+/**
+ * =========================
+ * MOCK EM MEMÓRIA
+ * =========================
+ */
 let mockPurchasesData = [...mockPurchases];
 let mockPurchaseItemsData: Record<string, PurchaseItem[]> = {
   ...mockPurchaseItems,
@@ -53,7 +58,7 @@ export const purchasesService = {
       );
     }
 
-    const filtersArray = [];
+    const filtersArray: any[] = [];
     if (filters?.date) {
       filtersArray.push({ column: "date", value: filters.date });
     }
@@ -64,9 +69,9 @@ export const purchasesService = {
       });
     }
 
-    return await db.select<Purchase>(
+    return db.select<Purchase>(
       "purchases",
-      filtersArray.length > 0 ? filtersArray : undefined,
+      filtersArray.length ? filtersArray : undefined,
       { column: "date", ascending: false }
     );
   },
@@ -80,7 +85,8 @@ export const purchasesService = {
     const purchases = await db.select<Purchase>("purchases", [
       { column: "id", value: id },
     ]);
-    return purchases[0];
+
+    return purchases[0] || null;
   },
 
   async getItems(purchaseId: string) {
@@ -89,7 +95,7 @@ export const purchasesService = {
       return mockPurchaseItemsData[purchaseId] || [];
     }
 
-    return await db.select<PurchaseItem>("purchase_items", [
+    return db.select("purchase_items", [
       { column: "purchase_id", value: purchaseId },
     ]);
   },
@@ -98,9 +104,11 @@ export const purchasesService = {
     purchase: Omit<Purchase, "id" | "created_at">,
     items: Omit<PurchaseItem, "id" | "purchase_id">[]
   ) {
-    // =========================
-    // MOCK MODE
-    // =========================
+    /**
+     * =========================
+     * MOCK MODE
+     * =========================
+     */
     if (isMockMode()) {
       await mockDelay();
 
@@ -118,7 +126,7 @@ export const purchasesService = {
         item_name: item.item_name,
         weight: item.weight,
         price_per_kg: item.price_per_kg,
-        total_value: item.weight * item.price_per_kg,
+        total_value: item.total_value,
       }));
 
       mockPurchaseItemsData[newPurchase.id!] = itemsWithPurchaseId;
@@ -126,11 +134,13 @@ export const purchasesService = {
       return newPurchase;
     }
 
-    // =========================
-    // PRODUÇÃO (SUPABASE)
-    // =========================
+    /**
+     * =========================
+     * PRODUÇÃO (SUPABASE)
+     * =========================
+     */
 
-    // 1️⃣ cria a compra
+    // 1️⃣ INSERE A COMPRA
     const [createdPurchase] = await db.insert<Purchase>("purchases", {
       date: purchase.date,
       payment_type: purchase.payment_type,
@@ -138,13 +148,15 @@ export const purchasesService = {
       total_value: purchase.total_value,
     });
 
-    // 2️⃣ cria os itens (MAPEANDO OS NOMES CORRETOS)
+    // 2️⃣ INSERE OS ITENS (MAPEANDO PARA O SCHEMA REAL DO BANCO)
     const itemsPayload = items.map((item) => ({
       purchase_id: createdPurchase.id,
       item_name: item.item_name,
       weight: item.weight,
-      price_per_unit: item.price_per_kg, // 🔥 CORREÇÃO CRÍTICA
-      total_value: item.total_value,
+
+      // 🔥 NOMES EXATOS DO BANCO
+      price_per_unit: item.price_per_kg,
+      total_price: item.total_value,
     }));
 
     await db.insert("purchase_items", itemsPayload);
