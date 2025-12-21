@@ -56,7 +56,7 @@ export const purchasesService = {
     return await db.select<Purchase>("purchases");
   },
 
-  async getItems(purchaseId: string) {
+  async getItems(purchaseId: string): Promise<PurchaseItem[]> {
     if (isMockMode()) {
       await mockDelay();
       return mockPurchaseItemsData[purchaseId] || [];
@@ -72,7 +72,7 @@ export const purchasesService = {
     items: Omit<PurchaseItem, "id" | "purchase_id">[]
   ) {
     // =========================
-    // MOCK MODE
+    // MOCK
     // =========================
     if (isMockMode()) {
       await mockDelay();
@@ -97,7 +97,6 @@ export const purchasesService = {
     // =========================
     // PRODUÇÃO
     // =========================
-
     const [createdPurchase] = await db.insert<Purchase>("purchases", {
       date: purchase.date,
       payment_type: purchase.payment_type,
@@ -125,7 +124,15 @@ export const purchasesService = {
       return;
     }
 
-    await db.delete("purchase_items", { purchase_id: id });
+    // 🔥 BUSCA E DELETA UM POR UM (tipado corretamente)
+    const items: PurchaseItem[] = await this.getItems(id);
+
+    for (const item of items) {
+      if (item.id) {
+        await db.delete("purchase_items", item.id);
+      }
+    }
+
     await db.delete("purchases", id);
   },
 };
