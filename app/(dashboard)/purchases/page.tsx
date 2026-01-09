@@ -131,7 +131,7 @@ export default function PurchasesPage() {
         0
       );
       const totalValue = validItems.reduce(
-        (sum, item) => sum + item.total_value,
+     (sum, item) => sum + item.weight * item.price_per_kg,
         0
       );
 
