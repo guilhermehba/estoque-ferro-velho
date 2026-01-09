@@ -101,8 +101,9 @@ export const purchasesService = {
       date: purchase.date,
       payment_type: purchase.payment_type,
       total_weight: purchase.total_weight,
-      // total_value ❌ NÃO ENVIAR
+      total_value: purchase.total_value, // ✅ OBRIGATÓRIO
     });
+
 
     const itemsPayload = items.map((item) => ({
       purchase_id: createdPurchase.id,
